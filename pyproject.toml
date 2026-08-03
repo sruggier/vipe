@@ -96,6 +96,7 @@ dependencies = [
     "tqdm",
     "transformers>=4,<5",
     "viser",
+    "hf-transfer>=0.1.9",
 ]
 keywords = ["computer-vision", "depth-estimation", "nvidia", "pose-estimation", "video"]
 classifiers = [
