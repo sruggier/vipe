@@ -59,7 +59,9 @@ def align_inv_depth_to_depth(
 
     ones = torch.ones((source_data.shape[0], 1), device=source_data.device)
     source_data_h = torch.cat([source_data, ones], dim=1)
+    torch.backends.cuda.preferred_linalg_library(backend="magma")
     transform_matrix = torch.linalg.lstsq(source_data_h, target_data).solution
+    torch.backends.cuda.preferred_linalg_library(backend="default")
 
     scale, bias = transform_matrix[0, 0], transform_matrix[1, 0]
     aligned_inv_depth = source_inv_depth * scale + bias
