@@ -216,6 +216,7 @@ class GraphBuffer:
         return k_mat
 
     def remove_second_newest(self, ix: int):
+        print(f"Removing second-newest frame: {ix}")
         assert ix == self.n_frames - 2
         self.tstamp[ix] = self.tstamp[ix + 1]
         self.images[ix] = self.images[ix + 1]
