@@ -2406,6 +2406,7 @@ dependencies = [
     { name = "torchvision", version = "0.24.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (platform_python_implementation != 'CPython' and sys_platform == 'linux') or sys_platform == 'win32'" },
     { name = "tqdm" },
     { name = "transformers" },
+    { name = "typing-extensions" },
     { name = "viser" },
 ]
 
@@ -2455,6 +2456,7 @@ requires-dist = [
     { name = "torchvision", marker = "sys_platform == 'linux' or sys_platform == 'win32'", index = "https://download.pytorch.org/whl/cu128" },
     { name = "tqdm" },
     { name = "transformers", specifier = ">=4,<5" },
+    { name = "typing-extensions", specifier = ">=4.15.0" },
     { name = "viser" },
 ]
 

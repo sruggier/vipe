@@ -2,13 +2,18 @@
 # https://github.com/princeton-vl/lietorch
 # Licensed under the BSD-3 License. See THIRD_PARTY_LICENSES.md for details.
 
+from types import NotImplementedType
+from typing import ClassVar, cast, overload
+
 import numpy as np
 import torch
+from torch.autograd import Function
+from typing_extensions import Self
 
 from .broadcasting import broadcast_inputs
 
 # group operations implemented in cuda
-from .group_ops import Act3, Act4, Adj, AdjT, Exp, FromVec, Inv, Jinv, Log, Mul, ToVec
+from .group_ops import Act3, Act4, Adj, AdjT, Exp, FromVec, GroupOp, Inv, Jinv, Log, Mul, ToVec
 
 
 class LieGroupParameter(torch.Tensor):
@@ -54,8 +59,10 @@ class LieGroupParameter(torch.Tensor):
 class LieGroup:
     """Base class for Lie Group"""
 
-    def __init__(self, data):
-        self.data = data
+    group_id: ClassVar[int]
+
+    def __init__(self, data: torch.Tensor):
+        self.data: torch.Tensor = data
 
     def __repr__(self):
         return "{}: size={}, device={}, dtype={}".format(self.group_name, self.shape, self.device, self.dtype)
@@ -124,15 +131,15 @@ class LieGroup:
         return cls.exp(sigma * xi)
 
     @classmethod
-    def apply_op(cls, op, x, y=None):
+    def apply_op(cls, op: type[Function], x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         """Apply group operator"""
         inputs, out_shape = broadcast_inputs(x, y)
 
-        data = op.apply(cls.group_id, *inputs)
+        data = cast("torch.Tensor", op.apply(cls.group_id, *inputs))  # pyright: ignore[reportUnknownMemberType]
         return data.view(out_shape + (-1,))
 
     @classmethod
-    def exp(cls, x):
+    def exp(cls, x: torch.Tensor) -> Self:
         """exponential map: x -> X"""
         return cls(cls.apply_op(Exp, x))
 
@@ -146,11 +153,11 @@ class LieGroup:
         """logarithm map"""
         return self.apply_op(Log, self.data)
 
-    def inv(self):
+    def inv(self) -> Self:
         """group inverse"""
         return self.__class__(self.apply_op(Inv, self.data))
 
-    def mul(self, other):
+    def mul(self, other: "LieGroup") -> Self:
         """group multiplication"""
         return self.__class__(self.apply_op(Mul, self.data, other.data))
 
@@ -170,7 +177,7 @@ class LieGroup:
     def Jinv(self, a):
         return self.apply_op(Jinv, self.data, a)
 
-    def act(self, p):
+    def act(self, p: torch.Tensor) -> torch.Tensor:
         """action on a point cloud"""
 
         # action on point
@@ -180,6 +187,8 @@ class LieGroup:
         # action on homogeneous point
         elif p.shape[-1] == 4:
             return self.apply_op(Act4, self.data, p)
+        else:
+            raise ValueError
 
     def matrix(self):
         """convert element to 4x4 matrix"""
@@ -205,7 +214,11 @@ class LieGroup:
         data_reshaped = self.data.view(dims + (self.embedded_dim,))
         return self.__class__(data_reshaped)
 
-    def __mul__(self, other):
+    @overload
+    def __mul__(self, other: Self) -> Self: ...
+    @overload
+    def __mul__(self, other: torch.Tensor) -> torch.Tensor: ...
+    def __mul__(self, other: torch.Tensor | Self | object) -> Self | torch.Tensor | NotImplementedType:
         # group multiplication
         if isinstance(other, LieGroup):
             return self.mul(other)
@@ -213,6 +226,8 @@ class LieGroup:
         # action on point
         elif isinstance(other, torch.Tensor):
             return self.act(other)
+        else:
+            return NotImplemented
 
     def __getitem__(self, index):
         return self.__class__(self.data[index])
@@ -280,14 +295,14 @@ class SE3(LieGroup):
     # translation, unit quaternion
     id_elem = torch.as_tensor([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
 
-    def __init__(self, data):
+    def __init__(self, data) -> None:
         if isinstance(data, SO3):
             translation = torch.zeros_like(data.data[..., :3])
             data = torch.cat([translation, data.data], -1)
 
         super(SE3, self).__init__(data)
 
-    def scale(self, s):
+    def scale(self, s) -> Self:
         t, q = self.data.split([3, 4], -1)
         t = t * s.unsqueeze(-1)
         return SE3(torch.cat([t, q], dim=-1))
