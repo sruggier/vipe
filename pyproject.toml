@@ -97,6 +97,7 @@ dependencies = [
     "transformers>=4,<5",
     "viser",
     "hf-transfer>=0.1.9",
+    "typing-extensions>=4.15.0",
 ]
 keywords = ["computer-vision", "depth-estimation", "nvidia", "pose-estimation", "video"]
 classifiers = [

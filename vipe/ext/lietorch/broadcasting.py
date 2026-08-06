@@ -3,13 +3,22 @@
 # Licensed under the BSD-3 License. See THIRD_PARTY_LICENSES.md for details.
 
 
-def check_broadcastable(x, y):
+from typing import overload
+
+from torch import Size, Tensor
+
+
+def check_broadcastable(x: Tensor, y: Tensor) -> None:
     assert len(x.shape) == len(y.shape)
     for n, m in zip(x.shape[:-1], y.shape[:-1]):
         assert n == m or n == 1 or m == 1
 
 
-def broadcast_inputs(x, y):
+@overload
+def broadcast_inputs(x: Tensor, y: None) -> tuple[tuple[Tensor], Size]: ...
+@overload
+def broadcast_inputs(x: Tensor, y: Tensor) -> tuple[tuple[Tensor, Tensor], Size]: ...
+def broadcast_inputs(x: Tensor, y: Tensor | None) -> tuple[tuple[Tensor] | tuple[Tensor, Tensor], Size]:
     """Automatic broadcasting of missing dimensions"""
     if y is None:
         xs, xd = x.shape[:-1], x.shape[-1]
@@ -31,4 +40,4 @@ def broadcast_inputs(x, y):
         x1 = x.repeat(x_expand + [1]).reshape(-1, xd).contiguous()
         y1 = y.repeat(y_expand + [1]).reshape(-1, yd).contiguous()
 
-    return (x1, y1), tuple(out_shape)
+    return (x1, y1), Size(out_shape)
