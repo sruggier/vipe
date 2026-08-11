@@ -34,15 +34,15 @@ import the result into COLMAP.
    1. In the Runpod console, go to
       [Early access features](https://console.runpod.io/user/early-access) and
       enable the `New Pod deploy page` option.
-   2. Create a 50 GB network volume in a region that has sufficient availability
-      of GPUs. If unsure, `eu-ro-1` is a reasonable choice.
+   2. (Optional) Create a network volume in a region that has sufficient
+      availability of GPUs, with a size of at least 10 GB. If unsure, `eu-ro-1`
+      is a reasonable choice.
    3. Either create a new template, or enter the options below in the pod
       deployment page.
-   4. Select the `runpod/pytorch:1.1.0-cu1281-torch291-ubuntu2404` image (or
-      equivalent), to match CUDA versions with what ViPE has in its
-      [`uv.lock`](https://github.com/nv-tlabs/vipe/blob/95a8816947602ddc26fcb7a80bea4f9313059578/uv.lock)
-      file.
-   5. Select the newly created network volume.
+   4. Configure the image to use `docker.io/sruggier/runpod-vipe:main`. This
+      contains the ViPE source tree at `/vipe`, with a pre-built Python
+      environment available at `/vipe/.env` and included in PATH.
+   5. (Optional) Select the newly created network volume.
    6. Depending on the dataset involved, a minimum amount of system memory may
       be required. For a dataset involving 125 images with 12 MP resolution, 55
       GB of memory is a reasonable minimum, depending on the particular pipeline
@@ -105,70 +105,17 @@ import the result into COLMAP.
    ssh vipe-pod
    ```
 
-10. Clone the ViPE repository:
-
-    ```bash
-    git clone https://github.com/sruggier/vipe.git /workspace/vipe
-    ```
-
-    or, use an existing clone of upstream, but with the same fixes applied:
-
-    ```bash
-    git clone https://github.com/nv-tlabs/vipe.git /workspace/vipe
-    cd /workspace/vipe
-    git remote add sruggier https://github.com/sruggier/vipe.git
-    git fetch sruggier
-    git checkout -b sruggier-main -t sruggier/main
-    ```
-
-11. Create a Python environment with all of the needed software installed:
-
-    ```bash
-    uv sync --link-mode=symlink
-    ```
-
-    During the first run, this will take a long time, roughly 105 minutes, due
-    to the very slow network storage volume, but the downloaded and built
-    packages will be cached, and later executions will generally take much less
-    time to execute.
-
-    In practice, one would want to either execute pods using a custom container
-    image that contains the result of this build step, or perform the build on
-    the container's own storage, which is faster. To do that:
-    1. allocate at least 15 GB of space on the container storage
-    2. use a symlink to redirect `/workspace/.cache/uv` to a directory under
-       `/tmp`
-    3. Perform the build, as above
-    4. Replace the symlink with the real cache directory produced by running the
-       build.
-
-12. (Optional) To enable use of the `lyra` preset, install MoGe:
-
-    ```bash
-    uv pip install --link-mode=symlink 'git+https://github.com/microsoft/MoGe.git'
-    ```
-
-13. (Optional) To test sparse tracking, install PyCuVSLAM:
-
-    ```bash
-    wget https://github.com/nvidia-isaac/cuVSLAM/releases/download/v17.0.0/cuvslam-17.0.0+cu12-cp310-cp310-manylinux_2_35_x86_64.whl
-    uv pip install --link-mode=symlink ./cuvslam-17.0.0+cu12-cp310-cp310-manylinux_2_35_x86_64.whl
-    ```
-
-14. Ensure a directory exists for pipeline output:
+10. Ensure a directory exists for pipeline output:
 
     ```bash
     mkdir /workspace/vipe-output
     ```
 
-15. Run the pipeline (choose a preset from
+11. Run the pipeline (choose a preset from
     [Pipeline Presets](https://nv-tlabs.github.io/vipe/reference/configuration/#pipeline-presets)):
 
     ```bash
-    VIPE_PRESET=default; uv run \
-    	--link-mode=symlink \
-    	--directory /workspace/vipe \
-    	python run.py \
+    VIPE_PRESET=default; python /vipe/run.py \
     	streams=frame_dir_stream \
     	streams.base_path=/workspace/datasets/<dataset> \
     	pipeline.output.save_artifacts=true \
@@ -181,25 +128,23 @@ import the result into COLMAP.
     To enable use of CuVSLAM during frontend initialization, add
     `pipeline.slam.sparse_tracks.name=cuvslam` to the command line.
 
-16. Export the results in a format that can be imported into COLMAP (fill in the
+12. Export the results in a format that can be imported into COLMAP (fill in the
     output directory):
 
     ```bash
-    VIPE_OUTPUT_DIR=/workspace/vipe-output/<output directory>
-    echo "Exporting dense point cloud for COLMAP"
-    uv run --directory /workspace/vipe --link-mode=symlink python \
-    	scripts/vipe_to_colmap.py "$VIPE_OUTPUT_DIR"
-    echo "Exporting SLAM keypoint cloud for COLMAP"
-    uv run --directory /workspace/vipe --link-mode=symlink python \
-    	scripts/vipe_to_colmap.py "$VIPE_OUTPUT_DIR" \
-    	-o "$dir"_colmap-slam-keypoints --use_slam_map
+    VIPE_OUTPUT_DIR=/workspace/vipe-output/<output directory>; \
+    echo "Exporting dense point cloud for COLMAP" && \
+    python /vipe/scripts/vipe_to_colmap.py "$VIPE_OUTPUT_DIR" && \
+    echo "Exporting SLAM keypoint cloud for COLMAP" && \
+    python /vipe/scripts/vipe_to_colmap.py "$VIPE_OUTPUT_DIR" \
+    	-o "$VIPE_OUTPUT_DIR"_colmap-slam-keypoints --use_slam_map
     ```
 
     This can also be run locally after the next step, in order to optimize the
     cost associated with running the pod, but it requires the ViPE repository to
     be cloned locally.
 
-17. On your local system, use `rsync` to transfer the output generated by ViPE:
+13. On your local system, use `rsync` to transfer the output generated by ViPE:
 
     ```bash
     rsync -rtvP vipe-pod:/workspace/vipe-output/ ~/path/to/vipe-output
@@ -209,7 +154,7 @@ import the result into COLMAP.
     CPU-based pod with the same network volume attached, and rsync from the
     cheaper pod instead.
 
-18. [Install COLMAP](https://colmap.github.io/install.html). On Debian-based
+14. [Install COLMAP](https://colmap.github.io/install.html). On Debian-based
     distributions, one can use APT:
 
     ```bash
@@ -220,7 +165,7 @@ import the result into COLMAP.
     import, because of the shortcomings described in
     [nv-tlabs/vipe#65](https://github.com/nv-tlabs/vipe/issues/65).
 
-19. Import a point cloud into COLMAP:
+15. Import a point cloud into COLMAP:
     1. Run `colmap gui`
     2. Select `File > Import model`
     3. Navigate to the directory containing output from ViPE. Navigate into one
