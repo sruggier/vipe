@@ -37,20 +37,22 @@ import the result into COLMAP.
    2. (Optional) Create a network volume in a region that has sufficient
       availability of GPUs, with a size of at least 10 GB. If unsure, `eu-ro-1`
       is a reasonable choice.
-   3. Either create a new template, or enter the options below in the pod
-      deployment page.
-   4. Configure the image to use `docker.io/sruggier/runpod-vipe:main`. This
+   3. Start a deployment using
+      [this template](https://console.runpod.io/hub/template/45lmv1hk70), or
+      configure the image to use `docker.io/sruggier/runpod-vipe:main`. This
       contains the ViPE source tree at `/vipe`, with a pre-built Python
       environment available at `/vipe/.env` and included in PATH.
-   5. (Optional) Select the newly created network volume.
-   6. Depending on the dataset involved, a minimum amount of system memory may
+   4. (Optional) Select the newly created network volume.
+   5. Depending on the dataset involved, a minimum amount of system memory may
       be required. For a dataset involving 125 images with 12 MP resolution, 55
       GB of memory is a reasonable minimum, depending on the particular pipeline
       preset used.
-   7. For a dataset of similar size, pick a GPU with at least 20 GB of VRAM if
+   6. For a dataset of similar size, pick a GPU with at least 20 GB of VRAM if
       running with the `no_vda` preset, 24 GB for `default`, and 48 GB if using
       `dav3`.
-   8. Before deploying, ensure the `SSH Access` option is selected.
+   7. Before deploying, ensure the `SSH Access` option is selected, if shown, or
+      open the overrides page for the template and manually set the `PUBLIC_KEY`
+      variable to include your public key.
 
 6. While waiting for the pod, start the rerun viewer locally, in order to
    receive log data from ViPE through connections forwarded by SSH from a remote
