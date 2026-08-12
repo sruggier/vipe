@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 	cd /vipe && \
 	uv sync --locked --no-install-project && \
 	uv pip install 'git+https://github.com/microsoft/MoGe.git@925b8ed835a7a9cdb7578ba15c658a0afc969030' && \
-	uv pip install 'https://github.com/nvidia-isaac/cuVSLAM/releases/download/v17.0.0/cuvslam-17.0.0+cu12-cp310-cp310-manylinux_2_35_x86_64.whl'
+	uv pip install 'https://github.com/nvidia-isaac/cuVSLAM/releases/download/v17.0.0/cuvslam-17.0.0+cu12-cp312-abi3-manylinux_2_39_x86_64.whl'
 
 COPY . /vipe
 RUN --mount=type=cache,target=/root/.cache/uv \
