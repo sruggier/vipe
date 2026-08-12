@@ -7,6 +7,7 @@ ENV UV_TOOL_BIN_DIR=/usr/local/bin
 ENV UV_NO_DEV=1
 ENV UV_LINK_MODE=copy
 ENV UV_NO_EDITABLE=1
+ENV UV_COMPILE_BYTECODE=1
 
 COPY <<EOF /etc/uv/uv.toml
 [extra-build-variables.nvidia-vipe]
