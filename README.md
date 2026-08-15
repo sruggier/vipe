@@ -168,15 +168,12 @@ import the result into COLMAP.
     apt install colmap
     ```
 
-    Version 3.10 should work, but newer versions may raise an exception during
-    import, because of the shortcomings described in
-    [nv-tlabs/vipe#65](https://github.com/nv-tlabs/vipe/issues/65).
-
 15. Import a point cloud into COLMAP:
     1. Run `colmap gui`
     2. Select `File > Import model`
     3. Navigate to the directory containing output from ViPE. Navigate into one
        of the folders whose name ends with `_dense` or `_sparse`, and choose the
-       directory inside that one. The chosen directory should contain a folder
-       named `images`, and files named `points3D.txt`, `images.txt`, and
-       `cameras.txt`.
+       directory inside that one. The chosen directory should contain two
+       subdirectories: `images` and `sparse`, as a COLMAP workspace directory
+       would. Inside `sparse/0`, there should be files named `points3D.txt`,
+       `images.txt`, and `cameras.txt`.
